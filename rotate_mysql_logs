@@ -1,0 +1,72 @@
+#!/usr/bin/python
+#
+# Questo script sostituisce quello di CyberPax del 2005.
+# Lo script si interfaccia al database mySQL presente sull'host e
+# provvede alla rotazione mensile di alcune tabelle.
+# Lo script e' pensato per essere inserito in /etc/cron.monthly.
+# Essendo python praticamente non ha bisogno di commenti.
+#
+# blue, Marzo 2014
+
+######## IMPORT E DEFINIZIONE VARIABILI GLOBALI ##############
+from datetime import date, timedelta
+#timestamp = '_'+str(date.today().year)+'_'+str(date.today().month-1)
+mydate = date.today() - timedelta(1);
+timestamp = mydate.strftime('_%Y_%m');
+
+import MySQLdb as mysql
+conn = mysql.connect(user='b0rg',passwd='b0rgl0g5',db='logs');
+db = conn.cursor()
+
+######### CREA LA TABELLA table CON IL LAYOUT DESIDERATO #######
+def create_log_table(table):
+	global db
+	db.execute('CREATE TABLE '+table+' \
+	( ID int unsigned not null auto_increment primary key, \
+		CustomerID bigint, \
+		ReceivedAt datetime NULL, \
+		DeviceReportedTime datetime NULL, \
+		Facility smallint NULL, \
+		Priority smallint NULL, \
+		FromHost varchar(60) NULL, \
+		Message text, \
+		NTSeverity int NULL, \
+		Importance int NULL, \
+		EventSource varchar(60), \
+		EventUser varchar(60) NULL, \
+		EventCategory int NULL, \
+		EventID int NULL, \
+		EventBinaryData text NULL, \
+		MaxAvailable int NULL, \
+		CurrUsage int NULL, \
+		MinUsage int NULL, \
+		MaxUsage int NULL, \
+		InfoUnitID int NULL , \
+		SysLogTag varchar(60), \
+		EventLogType varchar(60), \
+		GenericFileName VarChar(60), \
+		SystemID int NULL, \
+		Checksum int NULL, \
+		ProcessID varchar(60) \
+	)')
+
+#### RUOTA LA TABELLA table ####
+def rotate_log_table(table):
+	global db
+	try:
+		create_log_table('newtable')
+		db.execute('rename table '+table+' to '+table+timestamp)
+		db.execute('rename table newtable to '+table)
+	except mysql.OperationalError,e:
+		print('could not rotate tables: '+str(e))
+		try:
+			db.execute('drop table newtable');
+		except mysql.OperationalError:
+			pass
+		exit(1)
+
+#######################  MAIN PROGRAM  #####################
+for i in ('lcm1','lcm2','laur','server','switches','videoconf','cuda'):
+	rotate_log_table(i)
+
+conn.commit()
