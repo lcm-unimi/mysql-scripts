@@ -15,7 +15,7 @@ mydate = date.today() - timedelta(1);
 timestamp = mydate.strftime('_%Y_%m');
 
 import MySQLdb as mysql
-conn = mysql.connect(user='b0rg',passwd='b0rgl0g5',db='logs');
+conn = mysql.connect(user='user',passwd='secretpassword',db='logs');
 db = conn.cursor()
 
 ######### CREA LA TABELLA table CON IL LAYOUT DESIDERATO #######
